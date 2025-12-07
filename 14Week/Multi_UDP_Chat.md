@@ -1,7 +1,9 @@
-
+UDP_Chat.cpp을 해봤다면, 해당 프로그램도 쉽게 해결할 수 있다.  
+전반적인 수정점이나 흐름은 비슷하기 때문이다.  
+사실 리스트를 추가한 것 외에는 크게 변동점은 없는 프로그램이다.  
+  
 ```C++
 #include <winsock2.h>
-#include <WS2tcpip.h>
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -11,22 +13,17 @@
 #include <cstring>
 #include <limits>
 #include <cstdlib>
-#include <ws2tcpip.h>      // [추가] inet_pton, inet_ntop
-#include <conio.h> // [추가] _kbhit(), _getch()
+#include <ws2tcpip.h>   // inet_pton, inet_ntop 포함
+#include <conio.h>      // _kbhit(), _getch() 포함
 
-// POSIX socket headers
-//#include <sys/types.h>
-//#include <sys/socket.h>
-//#include <netinet/in.h>
-//#include <arpa/inet.h>
-//#include <unistd.h>
+// POSIX socket headers 삭제
 
 #define BUF_SIZE 1024
 using namespace std;
 
 struct Peer {
-    std::string name;
-    std::string ipStr;
+    string name;
+    string ipStr;
     int port;
     sockaddr_in addr;
 };
@@ -49,23 +46,23 @@ int main() {
 
     int local_port = 0;
     int peerCount = 0;
-    std::vector<Peer> peers;
+    vector<Peer> peers;
 
     // ===============================
     // 1. 초기 설정 입력
     // ===============================
-    std::cout << "[설정] 내(로컬) 포트 번호를 입력하세요: ";
-    std::cin >> local_port;
+    cout << "[설정] 내(로컬) 포트 번호를 입력하세요: ";
+    cin >> local_port;
 
-    std::cout << "[설정] 통신할 사용자(피어)의 수를 입력하세요: ";
-    std::cin >> peerCount;
+    cout << "[설정] 통신할 사용자(피어)의 수를 입력하세요: ";
+    cin >> peerCount;
 
     if (local_port <= 0 || local_port > 65535) {
-        cout << "로컬 포트 번호는 1~65535 사이여야 합니다.\n";
+        cerr << "로컬 포트 번호는 1~65535 사이여야 합니다.\n";
         return 1;
     }
     if (peerCount <= 0) {
-        cout << "최소 1명 이상의 피어가 필요합니다.\n";
+        cerr << "최소 1명 이상의 피어가 필요합니다.\n";
         return 1;
     }
 
@@ -73,7 +70,7 @@ int main() {
     cin.ignore(1, '\n');
 
     peers.reserve(peerCount);
-    for (int i = 0; i < peerCount; ++i) {
+    for (int i = 0; i < peerCount; ++i) { // 위에서 몇 명과 통신할 지 정한 수대로 다 설정함
         Peer p{};
         string portStr;
 
@@ -91,7 +88,7 @@ int main() {
         p.port = stoi(portStr);
 
         if (p.port <= 0 || p.port > 65535) {
-            cout << "포트 번호는 1~65535 사이여야 합니다.\n";
+            cerr << "포트 번호는 1~65535 사이여야 합니다.\n";
             return 1;
         }
 
@@ -100,7 +97,7 @@ int main() {
         p.addr.sin_family = AF_INET;
         p.addr.sin_port = htons(p.port);
         if (inet_pton(AF_INET, p.ipStr.c_str(), &p.addr.sin_addr) <= 0) {
-            cout << "잘못된 IP 주소: " << p.ipStr << "\n";
+            cerr << "잘못된 IP 주소: " << p.ipStr << "\n";
             return 1;
         }
 
@@ -125,33 +122,35 @@ int main() {
     local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     local_addr.sin_port = htons(local_port);
 
-    if (::bind(sockfd, reinterpret_cast<sockaddr*>(&local_addr),
+    if (bind(sockfd, reinterpret_cast<sockaddr*>(&local_addr),
         sizeof(local_addr)) == SOCKET_ERROR) {
-        perror("bind() 실패");
-        ::closesocket(sockfd);
+        cerr << "bind() 실패";
+        closesocket(sockfd);
         WSACleanup();
         return 1;
     }
 
-    std::cout << "\n=== UDP 멀티-유저 채팅 시작 ===\n";
-    std::cout << "로컬 포트: " << local_port << "\n";
-    std::cout << "등록된 피어 목록:\n";
+    cout << "\n=== UDP 멀티-유저 채팅 시작 ===\n";
+    cout << "로컬 포트: " << local_port << "\n";
+    cout << "등록된 피어 목록:\n";
     for (size_t i = 0; i < peers.size(); ++i) {
-        std::cout << "  " << (i + 1) << ") " << peers[i].name
+        cout << "  " << (i + 1) << ") " << peers[i].name
             << " - " << peers[i].ipStr << ":" << peers[i].port << "\n";
     }
-    std::cout << "\n명령어:\n";
-    std::cout << "  /list        : 피어 목록 보기\n";
-    std::cout << "  /use N       : N번째 피어를 현재 송신 대상으로 선택 (1 기반)\n";
-    std::cout << "  /all 메시지  : 모든 피어에게 브로드캐스트\n";
-    std::cout << "  /quit        : 프로그램 종료\n\n";
+    cout << "\n명령어:\n";
+    cout << "  /list        : 피어 목록 보기\n";
+    cout << "  /use N       : N번째 피어를 현재 송신 대상으로 선택 (1 기반)\n";
+    cout << "  /all 메시지  : 모든 피어에게 브로드캐스트\n";
+    cout << "  /quit        : 프로그램 종료\n\n";
 
     printPrompt(currentTargetName);
+
+    bool running = true;
 
     // ===============================
     // 3. select 루프
     // ===============================
-    while (true) {
+    while (running) {
         fd_set readfds;
         FD_ZERO(&readfds);
         //FD_SET(STDIN_FILENO, &readfds);
@@ -164,10 +163,9 @@ int main() {
         tv.tv_sec = 0;
         tv.tv_usec = 100000;   // 0.1초 타임아웃
 
-        int ret = ::select(0, &readfds, nullptr, nullptr, &tv);
+        int ret = select(0, &readfds, nullptr, nullptr, &tv);
         if (ret == SOCKET_ERROR) {
-            int err = WSAGetLastError();
-            cerr << "select() 실패, 오류 코드: " << err << endl;
+            cerr << "select() 실패, 오류 코드: " << WSAGetLastError() << endl;
             break;
         }
 
@@ -175,9 +173,10 @@ int main() {
         // 3-1. 키보드 입력 처리
         // ---------------------------
         while (_kbhit()) {
-            std::string line;
-            if (!std::getline(std::cin, line)) {
-                std::cout << "\n입력 스트림 종료. 프로그램 종료.\n";
+            string line;
+            if (!getline(cin, line)) {
+                cerr << "\n입력 스트림 종료. 프로그램 종료.\n";
+                running = false; // 해당 반복문 뿐만아니라, 모든 반복문 종료
                 break;
             }
 
@@ -189,50 +188,51 @@ int main() {
             // 명령어 처리
             if (line[0] == '/') {
                 if (line == "/quit") {
-                    std::cout << "종료합니다.\n";
+                    cout << "종료합니다.\n";
+                    running = false; // 해당 반복문 뿐만아니라, 모든 반복문 종료
                     break;
                 }
                 else if (line == "/list") {
-                    std::cout << "\n[피어 목록]\n";
+                    cout << "\n[피어 목록]\n";
                     for (size_t i = 0; i < peers.size(); ++i) {
-                        std::cout << "  " << (i + 1) << ") " << peers[i].name
+                        cout << "  " << (i + 1) << ") " << peers[i].name
                             << " - " << peers[i].ipStr << ":" << peers[i].port;
                         if (static_cast<int>(i) == currentPeerIdx) {
-                            std::cout << "  <-- 현재 선택";
+                            cout << "  <-- 현재 선택";
                         }
-                        std::cout << "\n";
+                        cout << "\n";
                     }
                 }
                 else if (line.rfind("/use", 0) == 0) {
                     // 형식: /use N
-                    std::string numStr = line.substr(4);
+                    string numStr = line.substr(4);
                     // 앞뒤 공백 제거
                     auto start = numStr.find_first_not_of(" \t");
-                    if (start != std::string::npos) {
+                    if (start != string::npos) {
                         numStr = numStr.substr(start);
                     }
                     if (!numStr.empty()) {
-                        int idx = std::atoi(numStr.c_str());
+                        int idx = atoi(numStr.c_str());
                         if (idx >= 1 && idx <= static_cast<int>(peers.size())) {
                             currentPeerIdx = idx - 1;
                             currentTargetName = peers[currentPeerIdx].name;
-                            std::cout << "현재 송신 대상: "
+                            cout << "현재 송신 대상: "
                                 << currentTargetName << "\n";
                         }
                         else {
-                            std::cout << "잘못된 인덱스입니다. 1 ~ "
+                            cout << "잘못된 인덱스입니다. 1 ~ "
                                 << peers.size() << " 범위에서 선택하세요.\n";
                         }
                     }
                     else {
-                        std::cout << "사용법: /use N (예: /use 2)\n";
+                        cout << "사용법: /use N (예: /use 2)\n";
                     }
                 }
                 else if (line.rfind("/all", 0) == 0) {
                     // 형식: /all 메시지...
-                    std::string msg = line.substr(4);
+                    string msg = line.substr(4);
                     auto start = msg.find_first_not_of(" \t");
-                    if (start != std::string::npos) {
+                    if (start != string::npos) {
                         msg = msg.substr(start);
                     }
                     else {
@@ -240,11 +240,11 @@ int main() {
                     }
 
                     if (msg.empty()) {
-                        std::cout << "브로드캐스트할 메시지가 비어 있습니다.\n";
+                        cout << "브로드캐스트할 메시지가 비어 있습니다.\n";
                     }
                     else {
                         for (const auto& p : peers) {
-                            int sent = ::sendto(
+                            int sent = sendto( // ssize_t -> int
                                 sockfd,
                                 msg.c_str(),
                                 msg.size(),
@@ -253,24 +253,25 @@ int main() {
                                 sizeof(p.addr)
                             );
                             if (sent < 0) {
-                                perror("sendto() 실패");
+                                cerr << ("sendto() 실패");
+                                running = false; // 해당 반복문 뿐만아니라, 모든 반복문 종료
                                 break;
                             }
                         }
-                        std::cout << "모든 피어에게 전송되었습니다.\n";
+                        cout << "모든 피어에게 전송되었습니다.\n";
                     }
                 }
                 else {
-                    std::cout << "알 수 없는 명령어입니다.\n";
+                    cout << "알 수 없는 명령어입니다.\n";
                 }
 
                 printPrompt(currentTargetName);
-        }
+            }
 
             // 일반 메시지: 현재 선택된 피어에게 전송
             if (!peers.empty()) {
                 const Peer& target = peers[currentPeerIdx];
-                int sent = ::sendto(
+                int sent = sendto( // ssize_t -> int
                     sockfd,
                     line.c_str(),
                     line.size(),
@@ -280,12 +281,13 @@ int main() {
                 );
 
                 if (sent < 0) {
-                    perror("sendto() 실패");
+                    cerr << "sendto() 실패";
+                    running = false; // 해당 반복문 뿐만아니라, 모든 반복문 종료
                     break;
                 }
             }
             else {
-                std::cout << "등록된 피어가 없습니다. 메시지를 보낼 수 없습니다.\n";
+                cout << "등록된 피어가 없습니다. 메시지를 보낼 수 없습니다.\n";
             }
 
             printPrompt(currentTargetName);
@@ -299,7 +301,7 @@ int main() {
             sockaddr_in from_addr{};
             socklen_t from_len = sizeof(from_addr);
 
-            int received = ::recvfrom(
+            int received = recvfrom( // ssize_t -> int
                 sockfd,
                 recv_buf,
                 BUF_SIZE,
@@ -308,20 +310,19 @@ int main() {
                 &from_len
             );
 
-            if (received == SOCKET_ERROR) {
-                int err = WSAGetLastError();
-                cerr << "recvfrom() 실패, 오류 코드: " << err << endl;
+            if (received == SOCKET_ERROR) { // 조건문 < 0 대신 == SOCKET_ERROR 사용
+                cerr << "recvfrom() 실패, 오류 코드: " << WSAGetLastError() << endl;
                 break;
             }
 
             recv_buf[received] = '\0';
 
             char from_ip[INET_ADDRSTRLEN];
-            ::inet_ntop(AF_INET, &from_addr.sin_addr, from_ip, sizeof(from_ip));
+            inet_ntop(AF_INET, &from_addr.sin_addr, from_ip, sizeof(from_ip));
             int from_port = ntohs(from_addr.sin_port);
 
             // 수신한 주소가 등록된 피어인지 확인
-            std::string fromName = "Unknown";
+            string fromName = "Unknown";
             for (const auto& p : peers) {
                 if (p.addr.sin_addr.s_addr == from_addr.sin_addr.s_addr &&
                     p.addr.sin_port == from_addr.sin_port) {
@@ -330,14 +331,14 @@ int main() {
                 }
             }
 
-            std::cout << "\n[받음 " << fromName << " (" << from_ip << ":" << from_port
+            cout << "\n[받음 " << fromName << " (" << from_ip << ":" << from_port
                 << ")] " << recv_buf << "\n";
 
             printPrompt(currentTargetName);
         }
     }
 
-    ::closesocket(sockfd);
+    closesocket(sockfd);
     WSACleanup();
     return 0;
 }
