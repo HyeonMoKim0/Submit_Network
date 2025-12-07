@@ -112,7 +112,7 @@ int main() {
     // 2. UDP 소켓 생성 및 바인드
     // ===============================
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0) {
+    if (sockfd == SOCKET_ERROR) {
         printf("socket() 실패");
         return 1;
     }
