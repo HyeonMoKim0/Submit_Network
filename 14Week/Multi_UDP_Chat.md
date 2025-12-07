@@ -252,7 +252,7 @@ int main() {
                                 reinterpret_cast<const sockaddr*>(&p.addr),
                                 sizeof(p.addr)
                             );
-                            if (sent < 0) {
+                            if (sent == SOCKET_ERROR) {
                                 cerr << ("sendto() 실패");
                                 running = false; // 해당 반복문 뿐만아니라, 모든 반복문 종료
                                 break;
