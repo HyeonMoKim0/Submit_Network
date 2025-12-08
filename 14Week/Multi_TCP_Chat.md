@@ -1,5 +1,8 @@
 해당 코드는 Peer-To-Peer 기반 멀티 챗임
-  
+
+클라이언트 측이 메시지를 주면, 즉시 connect하고, 메시지를 send하고, 클라이언트와의 소켓을 닫아버리는 구조임(말 그대로 단발성 구조)
+
+첫 데이터를 전송할 때, 이름도 정보를 얻도록 수정할 예정
 ```C++
 #include <winsock2.h>
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
