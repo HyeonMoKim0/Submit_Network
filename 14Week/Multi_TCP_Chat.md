@@ -1,4 +1,4 @@
-해당 코드는 Peer-To-Peer 기반 멀티 챗임  
+해당 코드는 Peer-To-Peer 기반 멀티 챗임
   
 ```C++
 #include <winsock2.h>
